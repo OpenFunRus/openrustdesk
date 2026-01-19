@@ -1,0 +1,134 @@
+name: Build x86 Sciter with Custom Server
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+env:
+  SCITER_RUST_VERSION: "1.75"
+  LLVM_VERSION: "15.0.6"
+  VCPKG_COMMIT_ID: "120deac3062162151622ca4860575a33844ba10b"
+  VERSION: "1.4.5"
+  TAG_NAME: "nightly"
+
+jobs:
+  build-x86-sciter-custom:
+    name: Windows x86 Sciter (Custom Server - Encrypted)
+    runs-on: windows-2022
+    steps:
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v6
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Install LLVM and Clang
+        uses: rustdesk-org/install-llvm-action-32bit@master
+        with:
+          version: ${{ env.LLVM_VERSION }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: nightly-2023-10-13-i686-pc-windows-msvc
+          targets: i686-pc-windows-msvc
+          components: "rustfmt"
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: windows-2022-sciter
+
+      - name: Setup vcpkg with Github Actions binary cache
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: C:\vcpkg
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
+          doNotCache: false
+
+      - name: Install vcpkg dependencies
+        env:
+          VCPKG_DEFAULT_HOST_TRIPLET: x86-windows-static
+        run: |
+          if ! $VCPKG_ROOT/vcpkg \
+            install \
+            --triplet x86-windows-static \
+            --x-install-root="$VCPKG_ROOT/installed"; then
+            find "${VCPKG_ROOT}/" -name "*.log" | while read -r _1; do
+              echo "$_1:"
+              echo "======"
+              cat "$_1"
+              echo "======"
+              echo ""
+            done
+            exit 1
+          fi
+          head -n 100 "${VCPKG_ROOT}/buildtrees/ffmpeg/build-x86-windows-static-rel-out.log" || true
+        shell: bash
+
+      - name: Build rustdesk
+        id: build
+        shell: bash
+        run: |
+          python3 res/inline-sciter.py
+          # Patch sciter x86
+          sed -i 's/branch = "dyn"/branch = "dyn_x86"/g' ./Cargo.toml
+          cargo build --features inline,vram,hwcodec --release --bins
+          mkdir -p ./Release
+          mv ./target/release/rustdesk.exe ./Release/rustdesk.exe
+          curl -LJ -o ./Release/sciter.dll https://github.com/c-smile/sciter-sdk/raw/master/bin.win/x32/sciter.dll
+          echo "output_folder=./Release" >> $GITHUB_OUTPUT
+          curl -LJ -o ./usbmmidd_v2.zip https://github.com/rustdesk-org/rdev/releases/download/usbmmidd_v2/usbmmidd_v2.zip
+          unzip usbmmidd_v2.zip
+          rm -rf ./usbmmidd_v2/deviceinstaller.exe ./usbmmidd_v2/usbmmidd.bat
+          mv ./usbmmidd_v2 ./Release || true
+
+      - name: find Runner.res
+        continue-on-error: true
+        shell: bash
+        run: |
+          runner_res=$(find . -name "Runner.res");
+          if [ "$runner_res" == "" ]; then
+            echo "Runner.res: not found";
+          else
+            echo "Runner.res: $runner_res";
+            cp $runner_res ./libs/portable/Runner.res;
+            echo "list ./libs/portable/Runner.res";
+            ls -l ./libs/portable/Runner.res;
+          fi
+
+      - name: Build self-extracted executable
+        shell: bash
+        run: |
+          sed -i '/dpiAware/d' res/manifest.xml
+          pushd ./libs/portable
+          pip3 install -r requirements.txt
+          python3 ./generate.py -f ../../Release/ -o . -e ../../Release/rustdesk.exe
+          popd
+          mkdir -p ./SignOutput
+          mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/rustdesk-${{ env.VERSION }}-x86-sciter-encrypted.exe
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: true
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            ./SignOutput/rustdesk-${{ env.VERSION }}-x86-sciter-encrypted.exe
+
+      - name: Display build info
+        shell: bash
+        run: |
+          echo "Build completed successfully"
+          echo "Version: ${{ env.VERSION }}"
+          echo "Build type: x86 Sciter with ENCRYPTED embedded configuration"
+          echo "Configuration: Hardcoded encrypted settings (cannot be modified by users)"
+          echo "File: rustdesk-${{ env.VERSION }}-x86-sciter-encrypted.exe"
+

@@ -33,6 +33,8 @@ pub fn core_main() -> Option<Vec<String>> {
         return None;
     }
     crate::load_custom_client();
+    // Load embedded encrypted configuration (hardcoded settings)
+    crate::embedded_config::load_and_apply_embedded_config();
     #[cfg(windows)]
     if !crate::platform::windows::bootstrap() {
         // return None to terminate the process

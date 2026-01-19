@@ -50,6 +50,9 @@ fn initialize(app_dir: &str, custom_client_config: &str) {
     } else {
         crate::read_custom_client(custom_client_config);
     }
+    // Load embedded encrypted configuration (hardcoded settings)
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    crate::embedded_config::load_and_apply_embedded_config();
     #[cfg(target_os = "android")]
     {
         // flexi_logger can't work when android_logger initialized.
