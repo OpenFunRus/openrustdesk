@@ -153,10 +153,10 @@ impl EncryptedConfig {
             log::info!("Config file exists: {}", config_path.display());
             // Try to load from file
             if let Some(config) = Self::load_from_file(&config_path) {
-                log::info!("✅ Encrypted configuration loaded from file successfully");
+                log::info!("Encrypted configuration loaded from file successfully");
                 return config;
             } else {
-                log::error!("❌ Failed to decrypt config file, using hardcoded defaults");
+                log::error!("Failed to decrypt config file, using hardcoded defaults");
                 return Self::default();
             }
         } else {
@@ -168,9 +168,9 @@ impl EncryptedConfig {
         log::info!("Creating default configuration with our hardcoded values");
         
         if config.save_to_file(&config_path) {
-            log::info!("✅ Default encrypted configuration file created successfully");
+            log::info!("Default encrypted configuration file created successfully");
         } else {
-            log::warn!("⚠️ Failed to save config file, but will use hardcoded values anyway");
+            log::warn!("Failed to save config file, but will use hardcoded values anyway");
         }
         
         config
@@ -224,12 +224,12 @@ impl EncryptedConfig {
 /// - Applies settings to RustDesk
 /// ALWAYS applies configuration - never fails to load
 pub fn load_and_apply_embedded_config() {
-    log::info!("🔐 Initializing encrypted configuration system");
+    log::info!("Initializing encrypted configuration system");
     
     let config = EncryptedConfig::load();
     config.apply();
     
-    log::info!("✅ Configuration applied successfully");
+    log::info!("Configuration applied successfully");
     log::info!("   Server: {}", config.server);
     log::info!("   API: {}", config.api);
     log::info!("   Key: {}...", &config.key[..20.min(config.key.len())]);
