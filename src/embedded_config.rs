@@ -36,19 +36,12 @@ pub struct EncryptedConfig {
 }
 
 impl EncryptedConfig {
-    /// Get the path to rustdesk.cfg next to the executable
-    fn get_config_path() -> Option<PathBuf> {
-        if let Ok(exe_path) = std::env::current_exe() {
-            log::info!("Executable path: {}", exe_path.display());
-            if let Some(exe_dir) = exe_path.parent() {
-                let config_path = exe_dir.join("rustdesk.cfg");
-                log::info!("Config path: {}", config_path.display());
-                return Some(config_path);
-            }
-        } else {
-            log::error!("Failed to get current executable path");
-        }
-        None
+    /// Get the path to rustdesk.cfg in RustDesk config directory
+    /// Uses the same directory as other RustDesk config files
+    fn get_config_path() -> PathBuf {
+        let config_path = hbb_common::config::Config::path("rustdesk.cfg");
+        log::info!("Config path: {}", config_path.display());
+        config_path
     }
     
     /// Create default configuration with hardcoded values
@@ -153,13 +146,7 @@ impl EncryptedConfig {
     /// Load configuration: read from file or create default
     /// ALWAYS returns a valid config - never fails
     pub fn load() -> Self {
-        let config_path = match Self::get_config_path() {
-            Some(path) => path,
-            None => {
-                log::error!("Failed to determine config path, using hardcoded defaults");
-                return Self::default();
-            }
-        };
+        let config_path = Self::get_config_path();
         
         // Check if config file exists
         if config_path.exists() {
