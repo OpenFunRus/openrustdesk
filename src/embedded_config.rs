@@ -203,6 +203,13 @@ impl EncryptedConfig {
             hbb_common::config::Config::set_permanent_password(&self.password);
             log::info!("Applied permanent password");
         }
+        
+        // Force always use relay server (disable P2P)
+        hbb_common::config::Config::set_option(
+            "force-always-relay".to_owned(),
+            "Y".to_owned(),
+        );
+        log::info!("Forced relay mode enabled - P2P disabled");
     }
 }
 
