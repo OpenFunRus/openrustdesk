@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RustDesk Config Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl-fast.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tweetnacl-util@0.15.1/nacl-util.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        
+        .info-box p {
+            color: #555;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 RustDesk Config Generator</h1>
+        <p class="subtitle">Генератор зашифрованного конфигурационного файла</p>
+        
+        <form id="configForm">
+            <div class="form-group">
+                <label for="server">Сервер ID:</label>
+                <input type="text" id="server" value="85.113.41.100" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="api">API Сервер:</label>
+                <input type="text" id="api" value="https://85.113.41.100" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="key">Ключ шифрования:</label>
+                <input type="text" id="key" value="sKlzGNCBVXKkTuixhHQSmyZdfP68PKEr8fUURaLVq5s=" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Пароль:</label>
+                <input type="text" id="password" value="Pw59881141" required>
+            </div>
+            
+            <button type="submit" class="btn">🔒 Создать зашифрованный rustdesk.cfg</button>
+        </form>
+        
+        <div id="success" class="success"></div>
+        <div id="error" class="error"></div>
+        
+        <div class="info-box">
+            <p><strong>ℹ️ Инструкция:</strong></p>
+            <p>1. Заполните параметры конфигурации</p>
+            <p>2. Нажмите "Создать зашифрованный rustdesk.cfg"</p>
+            <p>3. Файл будет скачан автоматически</p>
+            <p>4. Положите файл рядом с rustdesk.exe</p>
+        </div>
+    </div>
+
+    <script>
+        // Ключи шифрования из Rust кода (должны совпадать!)
+        const ENCRYPTION_KEY = new Uint8Array([
+            55, 75, 113, 57, 88, 112, 50, 87, 109, 53, 78, 118, 56, 82, 122, 51,
+            89, 99, 54, 72, 98, 49, 74, 102, 52, 71, 116, 48, 76, 115, 88, 89
+        ]); // "7Kq9Xp2Wm5Nv8Rz3Yc6Hb1Jf4Gt0LsXY"
+        
+        const NONCE_BYTES = new Uint8Array([
+            57, 65, 122, 52, 81, 120, 55, 87, 100, 50, 83, 99, 53, 86, 102, 56,
+            71, 98, 49, 78, 107, 51, 77, 90
+        ]); // "9Az4Qx7Wd2Sc5Vf8Gb1Nk3MZ"
+
+        document.getElementById('configForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const server = document.getElementById('server').value;
+            const api = document.getElementById('api').value;
+            const key = document.getElementById('key').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                // Формат: server|api|key|password
+                const configString = `${server}|${api}|${key}|${password}`;
+                const messageBytes = nacl.util.decodeUTF8(configString);
+                
+                // Шифруем с помощью NaCl secretbox
+                const encrypted = nacl.secretbox(messageBytes, NONCE_BYTES, ENCRYPTION_KEY);
+                
+                if (!encrypted) {
+                    throw new Error('Encryption failed');
+                }
+                
+                // Создаем Blob и скачиваем файл
+                const blob = new Blob([encrypted], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'rustdesk.cfg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Показываем успешное сообщение
+                const successDiv = document.getElementById('success');
+                successDiv.textContent = '✅ Файл rustdesk.cfg успешно создан и скачан!';
+                successDiv.style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                
+                setTimeout(() => {
+                    successDiv.style.display = 'none';
+                }, 5000);
+                
+            } catch (error) {
+                const errorDiv = document.getElementById('error');
+                errorDiv.textContent = '❌ Ошибка создания файла: ' + error.message;
+                errorDiv.style.display = 'block';
+                document.getElementById('success').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
+
