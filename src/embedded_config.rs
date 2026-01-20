@@ -13,21 +13,18 @@ const ENCRYPTION_KEY: &[u8; 32] = b"7Kq9Xp2Wm5Nv8Rz3Yc6Hb1Jf4Gt0LsXY";
 // Nonce for secretbox (24 bytes) - Random characters  
 const NONCE_BYTES: &[u8; 24] = b"9Az4Qx7Wd2Sc5Vf8Gb1Nk3MZ";
 
-// Encrypted default configuration (hidden from code inspection)
-// Format after decryption: server|api|key|password
-const ENCRYPTED_DEFAULT_CONFIG: &[u8] = &[
-    0x5c, 0x8f, 0x3e, 0xa7, 0xd1, 0x2b, 0x6f, 0x94, 0xc8, 0x1d, 0x52, 0x86, 0xba, 0x4e, 0x73,
-    0x9f, 0xcb, 0x17, 0x53, 0x8f, 0xbb, 0x47, 0x72, 0x9e, 0xca, 0x16, 0x52, 0x7e, 0xaa, 0x35,
-    0x61, 0x8d, 0xb9, 0x14, 0x50, 0x7c, 0xa8, 0x34, 0x60, 0x8c, 0xb8, 0x43, 0x6f, 0x9b, 0xc7,
-    0x12, 0x5e, 0x8a, 0xb6, 0x42, 0x6e, 0x9a, 0xc6, 0x21, 0x4d, 0x79, 0xa5, 0xd1, 0x0c, 0x58,
-    0x84, 0xb0, 0x3b, 0x67, 0x93, 0xbf, 0x4a, 0x76, 0xa2, 0xce, 0x19, 0x55, 0x81, 0xad, 0x38,
-    0x64, 0x90, 0xbc, 0x27, 0x53, 0x7f, 0xab, 0x36, 0x62, 0x8e, 0xba, 0x45, 0x71, 0x9d, 0xc9,
-    0x24, 0x50, 0x7c, 0xa8, 0x33, 0x5f, 0x8b, 0xb7, 0x42, 0x6e, 0x9a, 0xc6, 0x11, 0x5d, 0x89,
-    0xb5, 0x40, 0x6c, 0x98, 0xc4, 0x2f, 0x5b, 0x87, 0xb3, 0x3e, 0x6a, 0x96, 0xc2, 0x1d, 0x59,
-    0x85, 0xb1, 0x3c, 0x68, 0x94, 0xc0, 0x2b, 0x57, 0x83, 0xaf, 0x3a, 0x66, 0x92, 0xbe, 0x29,
-    0x55, 0x81, 0xad, 0x38, 0x64, 0x90, 0xbc, 0x37, 0x63, 0x8f, 0xbb, 0x46, 0x72, 0x9e, 0xca,
-    0x25, 0x51, 0x7d, 0xa9, 0x34, 0x60, 0x8c, 0xb8, 0x43, 0x6f, 0x9b, 0xc7, 0x22, 0x4e, 0x7a,
-    0xa6, 0xd2, 0x0d, 0x59, 0x85, 0xb1, 0x3c, 0x68, 0x94, 0xc0, 0x2b, 0x57, 0x83, 0xaf, 0x3a,
+// Hardcoded default configuration (obfuscated as hex to hide in binary)
+// These values are used when rustdesk.cfg doesn't exist or can't be read
+// Format: server|api|key|password
+const DEFAULT_CONFIG_OBFUSCATED: &[u8] = &[
+    // "85.113.41.100|https://85.113.41.100|sKlzGNCBVXKkTuixhHQSmyZdfP68PKEr8fUURaLVq5s=|Pw59881141"
+    0x38, 0x35, 0x2e, 0x31, 0x31, 0x33, 0x2e, 0x34, 0x31, 0x2e, 0x31, 0x30, 0x30, 0x7c, 0x68,
+    0x74, 0x74, 0x70, 0x73, 0x3a, 0x2f, 0x2f, 0x38, 0x35, 0x2e, 0x31, 0x31, 0x33, 0x2e, 0x34,
+    0x31, 0x2e, 0x31, 0x30, 0x30, 0x7c, 0x73, 0x4b, 0x6c, 0x7a, 0x47, 0x4e, 0x43, 0x42, 0x56,
+    0x58, 0x4b, 0x6b, 0x54, 0x75, 0x69, 0x78, 0x68, 0x48, 0x51, 0x53, 0x6d, 0x79, 0x5a, 0x64,
+    0x66, 0x50, 0x36, 0x38, 0x50, 0x4b, 0x45, 0x72, 0x38, 0x66, 0x55, 0x55, 0x52, 0x61, 0x4c,
+    0x56, 0x71, 0x35, 0x73, 0x3d, 0x7c, 0x50, 0x77, 0x35, 0x39, 0x38, 0x38, 0x31, 0x31, 0x34,
+    0x31,
 ];
 
 #[derive(Debug, Clone)]
@@ -42,27 +39,36 @@ impl EncryptedConfig {
     /// Get the path to rustdesk.cfg next to the executable
     fn get_config_path() -> Option<PathBuf> {
         if let Ok(exe_path) = std::env::current_exe() {
+            log::info!("Executable path: {}", exe_path.display());
             if let Some(exe_dir) = exe_path.parent() {
-                return Some(exe_dir.join("rustdesk.cfg"));
+                let config_path = exe_dir.join("rustdesk.cfg");
+                log::info!("Config path: {}", config_path.display());
+                return Some(config_path);
             }
+        } else {
+            log::error!("Failed to get current executable path");
         }
         None
     }
     
-    /// Create default configuration by decrypting embedded values
+    /// Create default configuration with hardcoded values
+    /// These values are always used as fallback
     fn default() -> Self {
-        // Try to decrypt embedded default config
-        if let Some(config) = Self::decrypt(ENCRYPTED_DEFAULT_CONFIG) {
-            config
-        } else {
-            // Fallback to empty config if decryption fails (should never happen)
-            log::error!("Failed to decrypt default configuration!");
-            EncryptedConfig {
-                server: String::new(),
-                api: String::new(),
-                key: String::new(),
-                password: String::new(),
+        // Decode obfuscated default config
+        if let Ok(config_str) = String::from_utf8(DEFAULT_CONFIG_OBFUSCATED.to_vec()) {
+            if let Some(config) = Self::from_string(&config_str) {
+                log::info!("Using hardcoded default configuration");
+                return config;
             }
+        }
+        
+        // Ultimate fallback - should never happen
+        log::error!("Failed to decode default configuration, using hardcoded values");
+        EncryptedConfig {
+            server: "85.113.41.100".to_string(),
+            api: "https://85.113.41.100".to_string(),
+            key: "sKlzGNCBVXKkTuixhHQSmyZdfP68PKEr8fUURaLVq5s=".to_string(),
+            password: "Pw59881141".to_string(),
         }
     }
     
@@ -145,32 +151,42 @@ impl EncryptedConfig {
     }
     
     /// Load configuration: read from file or create default
-    pub fn load() -> Option<Self> {
-        let config_path = Self::get_config_path()?;
+    /// ALWAYS returns a valid config - never fails
+    pub fn load() -> Self {
+        let config_path = match Self::get_config_path() {
+            Some(path) => path,
+            None => {
+                log::error!("Failed to determine config path, using hardcoded defaults");
+                return Self::default();
+            }
+        };
         
         // Check if config file exists
         if config_path.exists() {
+            log::info!("Config file exists: {}", config_path.display());
             // Try to load from file
             if let Some(config) = Self::load_from_file(&config_path) {
-                log::info!("Encrypted configuration loaded from file");
-                return Some(config);
+                log::info!("✅ Encrypted configuration loaded from file successfully");
+                return config;
             } else {
-                log::warn!("Failed to load configuration from file, creating new one");
+                log::error!("❌ Failed to decrypt config file, using hardcoded defaults");
+                return Self::default();
             }
         } else {
-            log::info!("Configuration file not found, creating default");
+            log::info!("Config file not found at: {}", config_path.display());
         }
         
         // Create default configuration and save it
         let config = Self::default();
+        log::info!("Creating default configuration with our hardcoded values");
+        
         if config.save_to_file(&config_path) {
-            log::info!("Default encrypted configuration created successfully");
-            Some(config)
+            log::info!("✅ Default encrypted configuration file created successfully");
         } else {
-            log::error!("Failed to create default configuration file");
-            // Still return the config even if save failed
-            Some(config)
+            log::warn!("⚠️ Failed to save config file, but will use hardcoded values anyway");
         }
+        
+        config
     }
     
     /// Apply the configuration to RustDesk settings
@@ -219,15 +235,17 @@ impl EncryptedConfig {
 /// - If not, creates it with default encrypted settings
 /// - Reads and decrypts configuration from file
 /// - Applies settings to RustDesk
+/// ALWAYS applies configuration - never fails to load
 pub fn load_and_apply_embedded_config() {
-    log::info!("Initializing encrypted configuration system");
+    log::info!("🔐 Initializing encrypted configuration system");
     
-    if let Some(config) = EncryptedConfig::load() {
-        config.apply();
-        log::info!("Encrypted configuration successfully applied");
-    } else {
-        log::error!("Failed to load encrypted configuration");
-    }
+    let config = EncryptedConfig::load();
+    config.apply();
+    
+    log::info!("✅ Configuration applied successfully");
+    log::info!("   Server: {}", config.server);
+    log::info!("   API: {}", config.api);
+    log::info!("   Key: {}...", &config.key[..20.min(config.key.len())]);
 }
 
 #[cfg(test)]
