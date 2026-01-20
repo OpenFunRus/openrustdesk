@@ -1,82 +1,163 @@
 use hbb_common::{log, sodiumoxide::crypto::secretbox};
+use std::fs;
+use std::path::PathBuf;
 
-/// Encrypted embedded configuration
-/// Settings are encrypted at compile time and can only be decrypted by RustDesk
-/// Users cannot read or modify these settings
+/// Encrypted configuration file system
+/// Creates encrypted rustdesk.cfg next to exe if it doesn't exist
+/// Always reads and decrypts configuration from this file
+/// Users cannot read the settings in plain text
 
-// Encryption key (32 bytes) - DO NOT CHANGE THIS KEY!
-// This key is used to decrypt the embedded configuration
-const ENCRYPTION_KEY: &[u8; 32] = b"OpenFunRustDesk2026ConfigKey!!!!";
+// Encryption key (32 bytes) - Random characters
+const ENCRYPTION_KEY: &[u8; 32] = b"7Kq9Xp2Wm5Nv8Rz3Yc6Hb1Jf4Gt0Ls!";
 
-// Nonce for secretbox (24 bytes)
-const NONCE_BYTES: &[u8; 24] = b"ConfigNonce2026!!!!!!!!!";
+// Nonce for secretbox (24 bytes) - Random characters  
+const NONCE_BYTES: &[u8; 24] = b"9Az4Qx7Wd2Sc5Vf8Gb1Nk3M";
 
-// Encrypted configuration data
-// Original settings:
-// Server: 85.113.41.100
-// API: https://85.113.41.100
-// Key: sKlzGNCBVXKkTuixhHQSmyZdfP68PKEr8fUURaLVq5s=
-// Password: Pw59881141
-
-// Encrypted format: server|api|key|password
-const ENCRYPTED_CONFIG: &[u8] = &[
-    0x8e, 0x3d, 0x9c, 0x7a, 0x42, 0x1f, 0x6b, 0x95, 0xd3, 0xe8, 0x4c, 0x11, 0x7f, 0xa2, 0x5d, 0x38,
-    0x91, 0xc4, 0x6e, 0x2f, 0x8a, 0x55, 0xb9, 0xf1, 0x3c, 0x67, 0xd2, 0x4e, 0x9b, 0x18, 0xa4, 0x73,
-    0xe5, 0x2d, 0x59, 0x86, 0xc1, 0x0f, 0x7b, 0xa7, 0xd9, 0x34, 0x6e, 0x92, 0xbe, 0x48, 0x75, 0xa1,
-    0xcd, 0x19, 0x5f, 0x8b, 0xe7, 0x33, 0x6d, 0x99, 0xc5, 0x21, 0x57, 0x83, 0xaf, 0x4b, 0x77, 0xa3,
-    0xdf, 0x1e, 0x69, 0x95, 0xc1, 0x2d, 0x58, 0x84, 0xb0, 0x3f, 0x6b, 0x97, 0xe3, 0x4c, 0x71, 0xad,
-    0xd9, 0x05, 0x62, 0x8e, 0xba, 0x46, 0x72, 0x9e, 0xca, 0x17, 0x53, 0x8f, 0xbb, 0x38, 0x64, 0x90,
-    0xcc, 0x28, 0x54, 0x81, 0xad, 0x49, 0x75, 0xa2, 0xde, 0x1a, 0x67, 0x93, 0xcf, 0x2b, 0x5e, 0x8a,
-    0xb6, 0x42, 0x7d, 0xa9, 0xd5, 0x01, 0x6c, 0x98, 0xc4, 0x30, 0x5b, 0x87, 0xb3, 0x4f, 0x7a, 0xa6,
-    0xe2, 0x1d, 0x69, 0x95, 0xc1, 0x3c, 0x68, 0x94, 0xc0, 0x2e, 0x5a, 0x86, 0xb2, 0x4d, 0x79, 0xa5,
-    0xd1, 0x0c, 0x58, 0x84, 0xb0, 0x4b, 0x77, 0xa3, 0xcf, 0x2a, 0x56, 0x82, 0xae, 0x39, 0x65, 0x91,
-    0xbd, 0x18, 0x54, 0x80, 0xac, 0x47, 0x73, 0x9f, 0xcb, 0x26, 0x52, 0x7e, 0xaa, 0x35, 0x61, 0x8d,
-];
+// Default configuration values
+const DEFAULT_SERVER: &str = "85.113.41.100";
+const DEFAULT_API: &str = "https://85.113.41.100";
+const DEFAULT_KEY: &str = "sKlzGNCBVXKkTuixhHQSmyZdfP68PKEr8fUURaLVq5s=";
+const DEFAULT_PASSWORD: &str = "Pw59881141";
 
 #[derive(Debug, Clone)]
-pub struct EmbeddedConfig {
+pub struct EncryptedConfig {
     pub server: String,
     pub api: String,
     pub key: String,
     pub password: String,
 }
 
-impl EmbeddedConfig {
-    /// Decrypt and parse the embedded configuration
-    /// Returns None if decryption fails (tamper protection)
-    fn decrypt() -> Option<String> {
+impl EncryptedConfig {
+    /// Get the path to rustdesk.cfg next to the executable
+    fn get_config_path() -> Option<PathBuf> {
+        if let Ok(exe_path) = std::env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                return Some(exe_dir.join("rustdesk.cfg"));
+            }
+        }
+        None
+    }
+    
+    /// Create default configuration with default values
+    fn default() -> Self {
+        EncryptedConfig {
+            server: DEFAULT_SERVER.to_string(),
+            api: DEFAULT_API.to_string(),
+            key: DEFAULT_KEY.to_string(),
+            password: DEFAULT_PASSWORD.to_string(),
+        }
+    }
+    
+    /// Serialize config to string format: server|api|key|password
+    fn to_string(&self) -> String {
+        format!("{}|{}|{}|{}", self.server, self.api, self.key, self.password)
+    }
+    
+    /// Deserialize config from string format
+    fn from_string(s: &str) -> Option<Self> {
+        let parts: Vec<&str> = s.split('|').collect();
+        if parts.len() != 4 {
+            return None;
+        }
+        
+        Some(EncryptedConfig {
+            server: parts[0].to_string(),
+            api: parts[1].to_string(),
+            key: parts[2].to_string(),
+            password: parts[3].to_string(),
+        })
+    }
+    
+    /// Encrypt configuration data
+    fn encrypt(&self) -> Vec<u8> {
+        let key = secretbox::Key(*ENCRYPTION_KEY);
+        let nonce = secretbox::Nonce(*NONCE_BYTES);
+        let plaintext = self.to_string().into_bytes();
+        
+        secretbox::seal(&plaintext, &nonce, &key)
+    }
+    
+    /// Decrypt configuration data
+    fn decrypt(encrypted: &[u8]) -> Option<Self> {
         let key = secretbox::Key(*ENCRYPTION_KEY);
         let nonce = secretbox::Nonce(*NONCE_BYTES);
         
-        match secretbox::open(ENCRYPTED_CONFIG, &nonce, &key) {
+        match secretbox::open(encrypted, &nonce, &key) {
             Ok(decrypted) => {
-                String::from_utf8(decrypted).ok()
+                if let Ok(text) = String::from_utf8(decrypted) {
+                    Self::from_string(&text)
+                } else {
+                    None
+                }
             }
             Err(_) => {
-                log::error!("Failed to decrypt embedded configuration - tampering detected!");
+                log::error!("Failed to decrypt configuration - file may be corrupted");
                 None
             }
         }
     }
     
-    /// Load the embedded configuration
-    /// Returns default hardcoded values that are encrypted in the binary
-    pub fn load() -> Option<Self> {
-        // For now, return hardcoded values directly
-        // In production, these would be the decrypted values
-        log::info!("Loading embedded configuration (encrypted in binary)");
-        
-        Some(EmbeddedConfig {
-            server: "85.113.41.100".to_string(),
-            api: "https://85.113.41.100".to_string(),
-            key: "sKlzGNCBVXKkTuixhHQSmyZdfP68PKEr8fUURaLVq5s=".to_string(),
-            password: "Pw59881141".to_string(),
-        })
+    /// Save encrypted configuration to file
+    fn save_to_file(&self, path: &PathBuf) -> bool {
+        let encrypted = self.encrypt();
+        match fs::write(path, encrypted) {
+            Ok(_) => {
+                log::info!("Encrypted configuration saved to: {}", path.display());
+                true
+            }
+            Err(e) => {
+                log::error!("Failed to save encrypted configuration: {}", e);
+                false
+            }
+        }
     }
     
-    /// Apply the embedded configuration to RustDesk settings
+    /// Load encrypted configuration from file
+    fn load_from_file(path: &PathBuf) -> Option<Self> {
+        match fs::read(path) {
+            Ok(encrypted) => {
+                log::info!("Reading encrypted configuration from: {}", path.display());
+                Self::decrypt(&encrypted)
+            }
+            Err(e) => {
+                log::warn!("Failed to read configuration file: {}", e);
+                None
+            }
+        }
+    }
+    
+    /// Load configuration: read from file or create default
+    pub fn load() -> Option<Self> {
+        let config_path = Self::get_config_path()?;
+        
+        // Check if config file exists
+        if config_path.exists() {
+            // Try to load from file
+            if let Some(config) = Self::load_from_file(&config_path) {
+                log::info!("Encrypted configuration loaded from file");
+                return Some(config);
+            } else {
+                log::warn!("Failed to load configuration from file, creating new one");
+            }
+        } else {
+            log::info!("Configuration file not found, creating default");
+        }
+        
+        // Create default configuration and save it
+        let config = Self::default();
+        if config.save_to_file(&config_path) {
+            log::info!("Default encrypted configuration created successfully");
+            Some(config)
+        } else {
+            log::error!("Failed to create default configuration file");
+            // Still return the config even if save failed
+            Some(config)
+        }
+    }
+    
+    /// Apply the configuration to RustDesk settings
     pub fn apply(&self) {
-        log::info!("Applying embedded encrypted configuration");
+        log::info!("Applying encrypted configuration");
         
         // Set custom rendezvous server (ID Server)
         if !self.server.is_empty() {
@@ -84,40 +165,43 @@ impl EmbeddedConfig {
                 "custom-rendezvous-server".to_owned(),
                 self.server.clone(),
             );
-            log::info!("Applied embedded rendezvous server");
+            log::info!("Applied rendezvous server: {}", self.server);
         }
         
         // Set API server
         if !self.api.is_empty() {
             hbb_common::config::Config::set_option("api-server".to_owned(), self.api.clone());
-            log::info!("Applied embedded API server");
+            log::info!("Applied API server: {}", self.api);
         }
         
         // Set encryption key
         if !self.key.is_empty() {
             hbb_common::config::Config::set_option("key".to_owned(), self.key.clone());
-            log::info!("Applied embedded encryption key");
+            log::info!("Applied encryption key");
         }
         
         // Set permanent password
         if !self.password.is_empty() {
             hbb_common::config::Config::set_permanent_password(&self.password);
-            log::info!("Applied embedded permanent password");
+            log::info!("Applied permanent password");
         }
     }
 }
 
-/// Main entry point: Load and apply embedded encrypted configuration
+/// Main entry point: Load and apply encrypted configuration
 /// This function is called during RustDesk startup
-/// Configuration is encrypted in the binary and cannot be modified by users
+/// - Checks if rustdesk.cfg exists next to exe
+/// - If not, creates it with default encrypted settings
+/// - Reads and decrypts configuration from file
+/// - Applies settings to RustDesk
 pub fn load_and_apply_embedded_config() {
-    log::info!("Initializing embedded encrypted configuration system");
+    log::info!("Initializing encrypted configuration system");
     
-    if let Some(config) = EmbeddedConfig::load() {
+    if let Some(config) = EncryptedConfig::load() {
         config.apply();
-        log::info!("Embedded configuration successfully applied");
+        log::info!("Encrypted configuration successfully applied");
     } else {
-        log::error!("Failed to load embedded configuration");
+        log::error!("Failed to load encrypted configuration");
     }
 }
 
@@ -126,15 +210,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_embedded_config_load() {
-        let config = EmbeddedConfig::load();
-        assert!(config.is_some());
+    fn test_config_serialization() {
+        let config = EncryptedConfig::default();
+        let serialized = config.to_string();
+        let deserialized = EncryptedConfig::from_string(&serialized);
         
-        let config = config.unwrap();
-        assert_eq!(config.server, "85.113.41.100");
-        assert_eq!(config.api, "https://85.113.41.100");
-        assert_eq!(config.key, "sKlzGNCBVXKkTuixhHQSmyZdfP68PKEr8fUURaLVq5s=");
-        assert_eq!(config.password, "Pw59881141");
+        assert!(deserialized.is_some());
+        let config2 = deserialized.unwrap();
+        assert_eq!(config.server, config2.server);
+        assert_eq!(config.api, config2.api);
+        assert_eq!(config.key, config2.key);
+        assert_eq!(config.password, config2.password);
+    }
+    
+    #[test]
+    fn test_encryption_decryption() {
+        let config = EncryptedConfig::default();
+        let encrypted = config.encrypt();
+        let decrypted = EncryptedConfig::decrypt(&encrypted);
+        
+        assert!(decrypted.is_some());
+        let config2 = decrypted.unwrap();
+        assert_eq!(config.server, config2.server);
+        assert_eq!(config.api, config2.api);
+        assert_eq!(config.key, config2.key);
+        assert_eq!(config.password, config2.password);
     }
 }
-
