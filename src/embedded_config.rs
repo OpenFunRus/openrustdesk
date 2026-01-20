@@ -6,7 +6,7 @@ use hbb_common::{log, sodiumoxide::crypto::secretbox};
 
 // Encryption key (32 bytes) - DO NOT CHANGE THIS KEY!
 // This key is used to decrypt the embedded configuration
-const ENCRYPTION_KEY: &[u8; 32] = b"OpenFunRustDesk2026ConfigKey!!";
+const ENCRYPTION_KEY: &[u8; 32] = b"OpenFunRustDesk2026ConfigKey!!!!";
 
 // Nonce for secretbox (24 bytes)
 const NONCE_BYTES: &[u8; 24] = b"ConfigNonce2026!!!!!!!!!";
