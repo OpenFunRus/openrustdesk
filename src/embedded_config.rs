@@ -8,10 +8,10 @@ use std::path::PathBuf;
 /// Users cannot read the settings in plain text
 
 // Encryption key (32 bytes) - Random characters
-const ENCRYPTION_KEY: &[u8; 32] = b"7Kq9Xp2Wm5Nv8Rz3Yc6Hb1Jf4Gt0Ls!";
+const ENCRYPTION_KEY: &[u8; 32] = b"7Kq9Xp2Wm5Nv8Rz3Yc6Hb1Jf4Gt0LsXY";
 
 // Nonce for secretbox (24 bytes) - Random characters  
-const NONCE_BYTES: &[u8; 24] = b"9Az4Qx7Wd2Sc5Vf8Gb1Nk3M";
+const NONCE_BYTES: &[u8; 24] = b"9Az4Qx7Wd2Sc5Vf8Gb1Nk3MZ";
 
 // Encrypted default configuration (hidden from code inspection)
 // Format after decryption: server|api|key|password
