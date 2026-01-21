@@ -2,11 +2,6 @@ name: Full Flutter CI
 
 on:
   workflow_dispatch:  # Only manual trigger
-      - "docs/**"
-      - "README.md"
-      - "res/**"
-      - "appimage/**"
-      - "flatpak/**"
 
 jobs:
   run-ci:
