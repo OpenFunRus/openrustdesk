@@ -288,6 +288,8 @@ impl RendezvousMediator {
                         Config::set_key_confirmed(true);
                         Config::set_host_key_confirmed(&self.host_prefix, true);
                         *SOLVING_PK_MISMATCH.lock().await = "".to_owned();
+                        // Save ID to file after confirmation
+                        crate::embedded_config::save_id_to_file(&Config::get_id());
                     }
                     Ok(register_pk_response::Result::UUID_MISMATCH) => {
                         self.handle_uuid_mismatch(sink).await?;

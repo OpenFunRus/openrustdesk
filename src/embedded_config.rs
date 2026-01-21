@@ -156,8 +156,10 @@ impl EncryptedConfig {
                 log::info!("Encrypted configuration loaded from file successfully");
                 return config;
             } else {
-                log::error!("Failed to decrypt config file, using hardcoded defaults");
-                return Self::default();
+                log::error!("Failed to decrypt config file - file is corrupted");
+                log::warn!("Recreating rustdesk.cfg with default configuration");
+                // File is corrupted - delete it and recreate with defaults
+                let _ = fs::remove_file(&config_path);
             }
         } else {
             log::info!("Config file not found at: {}", config_path.display());
@@ -233,6 +235,28 @@ pub fn load_and_apply_embedded_config() {
     log::info!("   Server: {}", config.server);
     log::info!("   API: {}", config.api);
     log::info!("   Key: {}...", &config.key[..20.min(config.key.len())]);
+}
+
+/// Get the path to rustdesk_id file in the same directory as rustdesk.cfg
+fn get_id_file_path() -> PathBuf {
+    let id_path = hbb_common::config::Config::path("rustdesk_id");
+    id_path
+}
+
+/// Save the RustDesk ID to rustdesk_id file
+/// Called after ID is confirmed/generated
+pub fn save_id_to_file(id: &str) {
+    let id_path = get_id_file_path();
+    
+    match fs::write(&id_path, id) {
+        Ok(_) => {
+            log::info!("Saved ID to file: {}", id_path.display());
+            log::info!("   ID: {}", id);
+        }
+        Err(e) => {
+            log::error!("Failed to save ID to file {}: {}", id_path.display(), e);
+        }
+    }
 }
 
 #[cfg(test)]
