@@ -687,28 +687,45 @@ impl Client {
         log::info!("peer address: {}, timeout: {}", peer, connect_timeout);
         let start = std::time::Instant::now();
 
-        let mut connect_futures = Vec::new();
-        let fut = connect_tcp_local(peer, Some(local_addr), connect_timeout);
-        connect_futures.push(
-            async move {
-                let conn = fut.await?;
-                Ok((conn, None, "TCP"))
-            }
-            .boxed(),
-        );
-        if let Some(udp_socket_nat) = udp_socket_nat {
-            connect_futures.push(udp_nat_connect(udp_socket_nat, "UDP", connect_timeout).boxed());
-        }
-        if let Some(udp_socket_v6) = udp_socket_v6 {
-            connect_futures.push(udp_nat_connect(udp_socket_v6, "IPv6", connect_timeout).boxed());
-        }
-        // Run all connection attempts concurrently, return the first successful one
-        let (mut conn, kcp, mut typ) = match select_ok(connect_futures).await {
-            Ok(conn) => (Ok(conn.0 .0), conn.0 .1, conn.0 .2),
-            Err(e) => (Err(e), None, ""),
-        };
+        let mut conn;
+        let kcp;
+        let mut typ;
+        let mut direct;
 
-        let mut direct = !conn.is_err();
+        // Skip direct connection attempts if force_relay is enabled
+        if interface.is_force_relay() {
+            log::info!("Force relay mode enabled - skipping direct connection attempts");
+            conn = Err(anyhow::anyhow!("Force relay mode"));
+            kcp = None;
+            typ = "";
+            direct = false;
+        } else {
+            let mut connect_futures = Vec::new();
+            let fut = connect_tcp_local(peer, Some(local_addr), connect_timeout);
+            connect_futures.push(
+                async move {
+                    let conn = fut.await?;
+                    Ok((conn, None, "TCP"))
+                }
+                .boxed(),
+            );
+            if let Some(udp_socket_nat) = udp_socket_nat {
+                connect_futures.push(udp_nat_connect(udp_socket_nat, "UDP", connect_timeout).boxed());
+            }
+            if let Some(udp_socket_v6) = udp_socket_v6 {
+                connect_futures.push(udp_nat_connect(udp_socket_v6, "IPv6", connect_timeout).boxed());
+            }
+            // Run all connection attempts concurrently, return the first successful one
+            let result = match select_ok(connect_futures).await {
+                Ok(conn) => (Ok(conn.0 .0), conn.0 .1, conn.0 .2),
+                Err(e) => (Err(e), None, ""),
+            };
+            conn = result.0;
+            kcp = result.1;
+            typ = result.2;
+            direct = !conn.is_err();
+        }
+
         if interface.is_force_relay() || conn.is_err() {
             if !relay_server.is_empty() {
                 conn = Self::request_relay(
