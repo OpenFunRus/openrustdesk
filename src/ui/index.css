@@ -221,8 +221,8 @@ div.connect-status {
 
 /* Footer style - text added in TIS HTML */
 .footer-text {
-    position: absolute;
-    right: 0.5em;
+    float: right;
+    margin-right: 0.5em;
     font-size: 0.7em;
     color: #64748b;
 }
