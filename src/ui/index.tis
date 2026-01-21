@@ -70,6 +70,7 @@ class ConnectStatus: Reactor.Component {
                 <span class={"connect-status-icon connect-status" + (service_stopped ? 0 : connect_status)} />
                 {this.getConnectStatusStr()}
                 {service_stopped ? <span .link #start-service>{translate('Start service')}</span> : ""}
+                <span .footer-text>RustDesk 1.4.5 by OpenFun 2026</span>
             </div>;
     }
 
@@ -685,7 +686,7 @@ class App: Reactor.Component
                     <div .left-pane style={incoming_only ? "width:*" : ""}>
                     <div>
                         {is_custom_client && handler.get_builtin_option("hide-powered-by-me") != "Y" ? <div .link #powered-by style="opacity:0.5;font-size:0.8em;text-decoration:underline">{translate('powered_by_me')}</div> : ""}
-                        <div .title style="flow:horizontal; position:relative; height:1.6em; line-height:1.6em">
+                        <div .title style="position:relative; height:1.6em; line-height:1.6em; text-align:center">
                             <span>{translate('Your Desktop')}</span>
                             {outgoing_only ? <span .link #open-settings style="position:absolute; right:0; bottom:0; transform:scale(0.6); transform-origin:right bottom; opacity:0.85">{svg_menu}</span> : ""}
                         </div>
