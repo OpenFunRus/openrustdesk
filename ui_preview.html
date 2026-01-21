@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RustDesk UI Preview - Exact Match</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+        }
+
+        .demo-container {
+            text-align: center;
+        }
+
+        .window-frame {
+            width: 320px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+            margin: 0 auto 20px;
+        }
+
+        .window-titlebar {
+            background: #fff;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .window-title {
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+        }
+
+        .window-btn.minimize { background: #ffc107; }
+        .window-btn.maximize { background: #4caf50; }
+        .window-btn.close { background: #f44336; }
+
+        /* === EXACT STYLES FROM index.css === */
+        
+        .rustdesk-app {
+            width: 320px;
+            height: 200px;
+            background: #182433;
+            color: #f8fafc;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .left-pane {
+            width: 320px;
+            height: 200px;
+            background: #182433;
+            border-right: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .left-pane > div:first-child {
+            padding: 20px;
+            padding-bottom: 60px;
+        }
+
+        .title {
+            font-size: 1.2em;
+            text-align: center;
+            color: #cbd5e1;
+            position: relative;
+            height: 1.6em;
+            line-height: 1.6em;
+        }
+
+        .your-desktop {
+            border-spacing: 0;
+            border-left: none;
+            padding: 0;
+            text-align: center;
+            margin-top: 2em;
+        }
+
+        .your-desktop input[type=text] {
+            padding: 0;
+            border: none;
+            height: auto;
+            background: transparent;
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #00d9ff;
+            text-align: center;
+            width: 100%;
+            outline: none;
+        }
+
+        .your-desktop > div {
+            color: #00d9ff;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        div.connect-status {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-top: #2d3748 solid 1px;
+            width: 100%;
+            padding: 0.75em;
+            background: #1d273b;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
+        }
+
+        .footer-text {
+            margin-left: 1em;
+            font-size: 0.7em;
+            color: #64748b;
+        }
+
+        div.connect-status > span.connect-status-icon {
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+            display: inline-block;
+            margin-right: 0.5em;
+            background: #2fb344;
+        }
+
+        /* === CONTROLS PANEL === */
+        
+        .info {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            color: #cbd5e1;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .info h3 {
+            margin-bottom: 15px;
+            color: #00d9ff;
+            text-align: center;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 10px;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+
+        .info-label {
+            color: #94a3b8;
+            text-align: right;
+        }
+
+        .info-value {
+            color: #f8fafc;
+            font-family: monospace;
+        }
+
+        .checkmark {
+            color: #2fb344;
+            margin-right: 5px;
+        }
+
+        .crossmark {
+            color: #e04f5f;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="window-frame">
+            <div class="window-titlebar">
+                <span class="window-title">RustDesk</span>
+                <div class="window-controls">
+                    <button class="window-btn minimize"></button>
+                    <button class="window-btn maximize"></button>
+                    <button class="window-btn close"></button>
+                </div>
+            </div>
+            <div class="rustdesk-app">
+                <div class="left-pane">
+                    <div>
+                        <div class="title">
+                            <span>Ваш рабочий стол</span>
+                        </div>
+                        <div class="your-desktop">
+                            <input type="text" readonly value="123 456 789">
+                        </div>
+                    </div>
+                    <div class="connect-status">
+                        <span class="connect-status-icon"></span>
+                        <span>Готово</span>
+                        <span class="footer-text">RustDesk 1.4.5 by OpenFun 2026</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info">
+            <h3>📋 Стили из index.css (RustDesk)</h3>
+            <div class="info-grid">
+                <div class="info-label">Фон:</div>
+                <div class="info-value">#182433</div>
+                
+                <div class="info-label">Цвет текста:</div>
+                <div class="info-value">#f8fafc</div>
+                
+                <div class="info-label">Заголовок:</div>
+                <div class="info-value">#cbd5e1, 1.2em, center</div>
+                
+                <div class="info-label">ID цвет:</div>
+                <div class="info-value">#00d9ff, 2.5em, bold</div>
+                
+                <div class="info-label">Статус бар:</div>
+                <div class="info-value">#1d273b</div>
+                
+                <div class="info-label">Зеленая точка:</div>
+                <div class="info-value">#2fb344</div>
+                
+                <div class="info-label">Футер цвет:</div>
+                <div class="info-value">#64748b, 0.7em</div>
+                
+                <div class="info-label">Размер окна:</div>
+                <div class="info-value">320px × 200px</div>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #334155;">
+                <div style="text-align: left;">
+                    <div style="margin-bottom: 10px;"><span class="checkmark">✓</span> Темная тема Tabler.io (#182433)</div>
+                    <div style="margin-bottom: 10px;"><span class="checkmark">✓</span> Заголовок по центру</div>
+                    <div style="margin-bottom: 10px;"><span class="checkmark">✓</span> ID голубой (#00d9ff) БЕЗ свечения</div>
+                    <div style="margin-bottom: 10px;"><span class="checkmark">✓</span> Размер ID: 2.5em</div>
+                    <div style="margin-bottom: 10px;"><span class="checkmark">✓</span> Футер в HTML (не ::after)</div>
+                    <div style="margin-bottom: 10px;"><span class="crossmark">✗</span> Неоновое свечение (убрано)</div>
+                    <div style="margin-bottom: 10px;"><span class="crossmark">✗</span> Анимация (Sciter не поддерживает)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

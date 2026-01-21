@@ -699,6 +699,7 @@ class App: Reactor.Component
                             {key_confirmed ? <input type="text" readonly value={formatId(get_id())}/> : <div>{translate("Generating ...")}</div>}
                         </div>}
                         <div style="display:none">{!outgoing_only && <PasswordArea />}</div>
+                        {!outgoing_only ? <ConnectStatus @{this.connect_status} /> : ""}
                     </div>
                     {(!is_win || handler.is_installed() || disable_installation) ? "" : <InstallMe />}
                     {software_update_url && !disable_installation ? <UpdateMe /> : ""}

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RustDesk UI Preview - Linked CSS</title>
+    
+    <!-- ПРЯМОЕ ПОДКЛЮЧЕНИЕ index.css из RustDesk -->
+    <link rel="stylesheet" href="src/ui/index.css">
+    
+    <style>
+        /* Дополнительные стили для демо */
+        body {
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .demo-wrapper {
+            text-align: center;
+        }
+
+        .window-frame {
+            width: 320px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+            margin: 0 auto 20px;
+        }
+
+        .window-titlebar {
+            background: #fff;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .window-title {
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+        }
+
+        .window-btn.minimize { background: #ffc107; }
+        .window-btn.maximize { background: #4caf50; }
+        .window-btn.close { background: #f44336; }
+
+        /* Фикс для браузера (Sciter свойства не работают) */
+        .app {
+            display: block !important;
+        }
+
+        .left-pane > div:first-child {
+            padding: 20px;
+            padding-bottom: 60px;
+        }
+
+        .info {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            color: #cbd5e1;
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 14px;
+        }
+
+        .info h3 {
+            color: #00d9ff;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .warning {
+            background: #854d0e;
+            color: #fef3c7;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .success {
+            background: #065f46;
+            color: #d1fae5;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-wrapper">
+        <div class="window-frame">
+            <div class="window-titlebar">
+                <span class="window-title">RustDesk</span>
+                <div class="window-controls">
+                    <button class="window-btn minimize"></button>
+                    <button class="window-btn maximize"></button>
+                    <button class="window-btn close"></button>
+                </div>
+            </div>
+            
+            <!-- СТРУКТУРА КАК В index.tis -->
+            <div class="app">
+                <div class="left-pane">
+                    <div>
+                        <div class="title">
+                            <span>Ваш рабочий стол</span>
+                        </div>
+                        <div class="your-desktop">
+                            <input type="text" readonly value="123 456 789">
+                        </div>
+                    </div>
+                    <div class="connect-status">
+                        <span class="connect-status-icon"></span>
+                        <span>Готово</span>
+                        <span class="footer-text">RustDesk 1.4.5 by OpenFun 2026</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info">
+            <h3>🔗 Прямое подключение index.css</h3>
+            
+            <div class="success">
+                ✅ Этот HTML использует <strong>прямую ссылку</strong> на src/ui/index.css
+            </div>
+
+            <div class="warning">
+                ⚠️ Sciter-специфичные свойства игнорируются браузером:
+                <ul style="margin: 10px 0 0 20px; line-height: 1.6;">
+                    <li><code>flow: horizontal</code> → игнорируется</li>
+                    <li><code>size: *</code> → игнорируется</li>
+                    <li><code>color(bg)</code> → игнорируется</li>
+                    <li><code>@media platform</code> → игнорируется</li>
+                </ul>
+            </div>
+
+            <div class="success" style="margin-top: 10px;">
+                ✅ Hex цвета и стандартные CSS работают:
+                <ul style="margin: 10px 0 0 20px; line-height: 1.6;">
+                    <li><code>#182433, #00d9ff, #cbd5e1</code> ✓</li>
+                    <li><code>font-size, text-align, padding</code> ✓</li>
+                    <li><code>background, color</code> ✓</li>
+                </ul>
+            </div>
+
+            <div style="margin-top: 15px; text-align: center; color: #94a3b8; font-size: 12px;">
+                Обновляй index.css → обновляй эту страницу (F5) → видишь изменения!
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
