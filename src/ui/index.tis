@@ -20,11 +20,9 @@ const disable_change_permanent_password = handler.get_builtin_option("disable-ch
 const disable_change_id = handler.get_builtin_option("disable-change-id") == "Y";
 
 // html min-width, min-height not working on mac, below works for all
-if (incoming_only) {
-  view.windowMinSize = (scaleIt(incoming_only_width), scaleIt((handler.is_installed() || disable_installation) ? 300 : 390));
-} else {
-  view.windowMinSize = (scaleIt(560), scaleIt(300));
-}
+// Fixed size 320x200 for custom cashier version
+view.windowMinSize = (320, 200);
+view.windowMaxSize = (320, 200);
 
 var app;
 var tmp = handler.get_connect_status();
@@ -687,17 +685,19 @@ class App: Reactor.Component
                     <div .left-pane style={incoming_only ? "width:*" : ""}>
                     <div>
                         {is_custom_client && handler.get_builtin_option("hide-powered-by-me") != "Y" ? <div .link #powered-by style="opacity:0.5;font-size:0.8em;text-decoration:underline">{translate('powered_by_me')}</div> : ""}
-                        <div .title style="flow:horizontal; position:relative; height:1.6em; line-height:1.6em">
+                        <div .title style="display:none; flow:horizontal; position:relative; height:1.6em; line-height:1.6em">
                             <span>{translate('Your Desktop')}</span>
                             {outgoing_only ? <span .link #open-settings style="position:absolute; right:0; bottom:0; transform:scale(0.6); transform-origin:right bottom; opacity:0.85">{svg_menu}</span> : ""}
                         </div>
-                        <div .lighter-text>{outgoing_only ? translate('outgoing_only_desk_tip') : translate('desk_tip')}</div>
+                        <div .lighter-text style="display:none">{outgoing_only ? translate('outgoing_only_desk_tip') : translate('desk_tip')}</div>
                         {outgoing_only ? <div style="position:absolute; left:-10000px; top:-10000px; width:0; height:0; overflow:hidden"><MyIdMenu /></div> : ""}
                         {!outgoing_only && <div .your-desktop>
-                            <MyIdMenu />
-                            {key_confirmed ? <input type="text" readonly value={formatId(get_id())}/> : translate("Generating ...")}
+                            <div style="position:absolute; left:-10000px; top:-10000px; width:0; height:0; overflow:hidden">
+                                <MyIdMenu />
+                            </div>
+                            {key_confirmed ? <input type="text" .neon-id readonly value={formatId(get_id())}/> : <div .neon-id>{translate("Generating ...")}</div>}
                         </div>}
-                        {!outgoing_only && <PasswordArea />}
+                        <div style="display:none">{!outgoing_only && <PasswordArea />}</div>
                     </div>
                     {(!is_win || handler.is_installed() || disable_installation) ? "" : <InstallMe />}
                     {software_update_url && !disable_installation ? <UpdateMe /> : ""}
