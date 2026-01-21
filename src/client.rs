@@ -695,7 +695,7 @@ impl Client {
         // Skip direct connection attempts if force_relay is enabled
         if interface.is_force_relay() {
             log::info!("Force relay mode enabled - skipping direct connection attempts");
-            conn = Err(anyhow::anyhow!("Force relay mode"));
+            conn = Err(anyhow!("Force relay mode"));
             kcp = None;
             typ = "";
             direct = false;
