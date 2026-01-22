@@ -411,7 +411,13 @@ impl Client {
         let mut relay_server = "".to_owned();
         let mut peer_addr = Config::get_any_listen_addr(true);
         let mut peer_nat_type = NatType::UNKNOWN_NAT;
-        let my_nat_type = crate::get_nat_type(100).await;
+        // Skip NAT type detection if force_relay is enabled to avoid delay
+        let my_nat_type = if interface.is_force_relay() {
+            log::info!("Force relay mode - skipping NAT type detection");
+            NatType::SYMMETRIC.value()
+        } else {
+            crate::get_nat_type(100).await
+        };
         let mut is_local = false;
         let mut feedback = 0;
         use hbb_common::protobuf::Enum;
